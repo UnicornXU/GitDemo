@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+	<meta charset="UTF-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+	<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+	<title>Document</title>
+	<style>
+		*{margin:0;padding:0;}
+		header,nav,section{width: 90%;margin:0px auto;}
+		header{background-color: #1E90FF;text-align:center;line-height:50px;}
+		nav{text-align:center;background-color: #ccc;height:60px;}
+		nav>input{padding:10px 20px;background-color: #555;margin-right:20px;border:none;border-radius:5px;color:#fff;margin-top:10px;}
+		nav>input.current{background-color: deepskyblue;}
+		.clear:after {
+				content: "";
+				width: 0px;
+				height: 0px;
+				display: block;
+				clear: both;
+			}
+			
+			section {
+				padding: 15px 20px;
+				display: none;
+			}
+			
+			#showTask .grayDate {
+				color: gainsboro;
+				
+				
+			}
+			
+			#showTask .datalist>* {
+				float: left;
+				
+			}
+			
+			#showTask div {
+				margin-left: 20px;
+				min-width: 60%;
+				max-width: 90%;
+			}
+			
+			#showTask .delTask {
+				float: right;
+				background-color: darkred;
+				color: white;
+				border: none;
+				font-size: 16px;
+				border-radius: 10px;
+				padding: 5px 10px;
+				margin-left:20px;
+			}
+			#addTask p input {
+				width: 100%;
+				border: solid 1px darkgray;
+				margin: 10px 0px;
+			}
+			
+			#addTask #taskTitle,
+			#addTask #taskDate {
+				height: 36px;
+			}
+			
+			#addTask #addBtn {
+				height: 50px;
+				font-size: 26px;
+				color: #fff;
+				background-color: lawngreen;
+			}
+			#isComplete{margin-left:20px;}
+			
+	</style>
+</head>
+<body>
+	<header>
+		<h1>希望清单</h1>
+	</header>
+	<nav>
+		<input class="current" type="button" value="任务列表" />
+		<input type="button" value="添加任务" />
+		<input type="button" value="系统设置" />
+	</nav>
+	<!--显示任务-->
+	<section id="showTask" style="display: block;"></section>
+	<!--添加任务-->
+	<section id="addTask">
+		<h2>标题</h2>
+		<p><input id="taskTitle" type="text"  autofocus="autofocus" placeholder="请输入标题"/></p>
+		<h2>日期</h2>
+		<p><input id="taskDate" type="date" placeholder="请输入日期" /></p>
+		<h2>状态<input id="isComplete" type="checkbox"  /> </h2>
+		<p><input type="button"  id="addBtn" value="添加任务" /></p>
+	</section>
+	<!--系统设置-->
+	<section id="system" style="display: block;">
+		<h2>系统设置</h2>
+	</section>
+	<script src="jquery.js"></script>
+	<script src="jquery.tmpl.js"></script>
+	<!--定义显示任务的模板-->
+	<script id="showTaskTmpl" type="text/html">
+		<div class="datalist clear">
+			{{if isComplete}}
+				   <input type="checkbox" value="" checked="checked" />
+				{{else}}
+				   <input type="checkbox" value="" />
+			{{/if}}
+			<div>
+				<p>{{= title}}</p>
+				<p class="grayDate">{{= taskDate}}</p>
+			</div>
+			<input type="button" onclick="delTask('{{= title}}')" class="delTask" id="delBtn" value="删除"/>
+			<input type="button" onclick="editTask('{{= title}}')" class="delTask"  value="修改"/>
+		</div>
+	</script>
+	
+	
+	
+	<script type="text/javascript">
+		$('nav input').on('click',function(){
+			$(this).addClass('current').siblings().removeClass('current');
+			var index=$(this).index();
+			$('section').eq(index).show().siblings('section').hide();
+			if(index==0)
+				{
+					showTask();
+			}
+		})
+		
+		
+		
+		//添加任务
+		$('#addBtn').on('click',function(){
+			//获取输入框的值
+			var title=$('#taskTitle').val();
+			var taskDate=$('#taskDate').val();
+			var isComplete=$('#isComplete').prop('checked');
+			//json格式数据
+			var dataArray;
+			//读取本地内存，查看是否有存在数组
+			var exitTask=localStorage.getItem("taskName");
+			console.log(exitTask);
+			
+			if(exitTask==null){
+				dataArray=[];
+			}else{
+				dataArray=JSON.parse(exitTask);
+			}
+			
+			var data={"title":title,"taskDate":taskDate,"isComplete":isComplete};
+			//把json添加到数组
+		     dataArray.unshift(data);
+			//存入本地存储
+			
+		    localStorage.setItem("taskName",JSON.stringify(dataArray));
+			
+		    //清空数据
+		    $('#taskTitle').val("");
+		    $("#taskDate").val("");
+			
+			//取出来时把字符串转为JSON对象
+		/*console.log(JSON.parse(localStorage.getItem("taskName")));*/
+		})
+		showTask();
+		
+		function showTask(){
+			//获取数据,转换为json数组
+			var exitTaskArray=JSON.parse(localStorage.getItem('taskName'));
+			//渲染模板
+			var result=$('#showTaskTmpl').tmpl(exitTaskArray);
+			//写入模板
+			$('#showTask').html(result);
+		}
+		
+		function delTask(title){
+			//将标题赋值
+			var delTaskTitle=title;
+			//获取数据
+			var exitTaskArray=JSON.parse(localStorage.getItem('taskName'));
+			console.log(exitTaskArray);
+			
+			//删除索引
+			var delIndex;
+			//遍历数组
+			for(x in exitTaskArray){
+				 
+				if(exitTaskArray[x].title==delTaskTitle){
+					delIndex=x;
+					break;  //跳出循环
+				}
+				console.log();
+			}
+			//执行删除
+			exitTaskArray.splice(delIndex,1);  //返回删除的项目
+			//把删除的数组重新写入
+			localStorage.setItem('taskName',JSON.stringify(exitTaskArray));
+			//刷新
+			showTask();
+		}
+		//修改
+		function editTask(title){
+			console.log(title);
+		}
+		
+		
+	</script>
+</body>
+</html>
